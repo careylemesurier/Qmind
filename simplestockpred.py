@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib as mat
 import numpy as np
 import tensorflow as tf
-import sklearn as sklearn
+
 # Import data
 data = pd.read_csv("data_stocks.csv")
 # Drop date variable
@@ -13,7 +13,7 @@ p = data.shape[1]
 # Make data a numpy array
 data = data.values
 #a quick look at the data
-#mat.pyplot.plot(data[:,2])
+mat.pyplot.plot(data[:,2])
 
 # Training and test data
 train_start = 0
@@ -34,18 +34,6 @@ y_train = data_train[:, 0]
 X_test = data_test[:, 1:]
 y_test = data_test[:, 0]
 
-# Define a and b as placeholders
-a = tf.placeholder(dtype=tf.int8)
-b = tf.placeholder(dtype=tf.int8)
-
-# Define the addition
-c = tf.add(a, b)
-
-# Initialize the graph
-graph = tf.Session()
-
-# Run the graph
-graph.run(c, feed_dict={a: 5, b: 4})
 
 n_stocks = 500
 
@@ -97,13 +85,10 @@ mse = tf.reduce_mean(tf.squared_difference(out, Y))
 # Optimizer
 opt = tf.train.AdamOptimizer().minimize(mse)
 
-# Initializers
-sigma = 1
-weight_initializer = tf.variance_scaling_initializer(mode="fan_avg", distribution="uniform", scale=sigma)
-bias_initializer = tf.zeros_initializer()
 
 # Make Session
 net = tf.Session()
+
 # Run initializer
 net.run(tf.global_variables_initializer())
 
