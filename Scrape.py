@@ -8,29 +8,34 @@ import datetime
 
 s=input("What ticker? ")
 website='https://finance.yahoo.com/quote/{}/'.format(s)
-page=requests.get(website)
+'''page=requests.get(website)
 soup = bs(page.content, 'html.parser')
 class1='W(100%)'
 class2='Ta(end) Fw(b) Lh(14px)'
-col1 = soup.find_all('span', {'class': 'Trsdu(0.3s)'})
+col1 = soup.find_all('span', {'class': 'Trsdu(0.3s)'})'''
 #while market is closed
 cleanData=[]
 #cleanData=np.asarray(cleanData)
 a=0
 while a < 5:
+    page = requests.get(website)
+    soup = bs(page.content, 'html.parser')
+    class1 = 'W(100%)'
+    class2 = 'Ta(end) Fw(b) Lh(14px)'
+    col1 = soup.find_all('span', {'class': 'Trsdu(0.3s)'})
     row=[]
     currentDT=datetime.datetime.now()
     print(currentDT)
     row.append(currentDT.strftime("%m/%d/%Y"))
     row.append(currentDT.strftime("%H:%M:%S"))
     for x in range(len(col1)):
-        if (x!=2):
+        #if (x!=2):
             row.append(col1[x].decode_contents(formatter="html"))
     a+=1
     cleanData.append(row)
     #row = np.asarray(row)
     #np.stack((cleanData,row))
-    time.sleep(1)
+    time.sleep(30)
     print(cleanData)
 
 numpyCD=np.array(cleanData)
