@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Feb  8 14:41:08 2019
-
+Created on Fri Mar  8 22:16:06 2019
+LSTM2- this file doesnt use the data_processing file it just takes the web scraping directly and processes it before the network
+becuase i was having problems so i was just experimenting with different things
 @author: careylemesurier
 """
+
 #test_min = 7800
 #test_mid = 7900
 #test_max = 8300
-#smoothing_window_size = 10
+#smoothing_window_size = 100
 #start_value = 6000
 #perdiction_size = 25
 
@@ -31,82 +33,96 @@ from sklearn.preprocessing import MinMaxScaler
 #df = pd.read_csv(os.path.join('Stocks','aapl.us.txt'),delimiter=',',usecols=['Date','Open','High','Low','Close'])
 #print('Loaded data from the Kaggle repository')
 # Sort DataFrame by date
-#df = df.sort_values('Date')
+df = pd.read_csv("biib.csv", skiprows=7010)
+df.columns = ['date','open','high','low','close','volume']
 
+df = df.sort_values('date')
+
+start_value = 0
+
+#for d in range(0,start_value,1):
+ #   df = df.drop([d],axis=0)
+    
+#df = df.reset_index()    
 # Double check the result
-#df.head()
 
-#data visualization
-#plt.figure(figsize = (18,9))
-#plt.plot(range(df.shape[0]),(df['Low']+df['High'])/2.0)
-#plt.xticks(range(0,df.shape[0],500),df['Date'].loc[::500],rotation=45)
-#plt.xlabel('Date',fontsize=18)
-#plt.ylabel('Mid Price',fontsize=18)
-#plt.show()
+df.head()
+
+test_min = (df.shape[0])*0.7-1050
+test_min = int(test_min)
+test_mid = (df.shape[0])*0.7
+test_mid = int(test_mid)
+test_max = (df.shape[0])
+smoothing_window_size = 1000
+perdiction_size = 500
 
 # First calculate the mid prices from the highest and lowest, per day
-#high_prices = df.loc[:,'High'].as_matrix()
-#low_prices = df.loc[:,'Low'].as_matrix()
-#mid_prices = (high_prices+low_prices)/2.0
+high_prices = df.loc[:,'high'].as_matrix()
+low_prices = df.loc[:,'low'].as_matrix()
+mid_prices = (high_prices+low_prices)/2.0
 
-#train_data = mid_prices[start_value:test_mid]
-#test_data = mid_prices[test_mid:]
-
-# Scale the data to be between 0 and 1
-# When scaling remember! You normalize both test and train data with respect to training data
-# Because you are not supposed to have access to test data
-#scaler = MinMaxScaler()
-#train_data = train_data.reshape(-1,1)
-#test_data = test_data.reshape(-1,1)
-    
-train_data = pd.read_csv('scaled_training_data.csv',delimiter=',').as_matrix()
-test_data = pd.read_csv('scaled_test_data.csv',delimiter=',').as_matrix()
-
-train_size = train_data.shape[0]
-test_size = test_data.shape[0]
-
-test_min = train_size-150 #150 indexs behind begining of test data - idk why but needed this to make it work
-test_mid = train_size #begining of test data index
-test_max = train_size + test_size #end of test data index
-smoothing_window_size = 100
-start_value = 0 #for apple change to around 6000 to cut off first 20ish years- causes problems tho
-perdiction_size = 25 #how many days into the future it predicts for
-
-# Train the Scaler with training data and smooth data
-#for di in range(0,test_min-start_value,smoothing_window_size):
-#    scaler.fit(train_data[di:di+smoothing_window_size,:])
- #   train_data[di:di+smoothing_window_size,:] = scaler.transform(train_data[di:di+smoothing_window_size,:])
-
-# You normalize the last bit of remaining data
-#scaler.fit(train_data[di+smoothing_window_size:,:])
-#train_data[di+smoothing_window_size:,:] = scaler.transform(train_data[di+smoothing_window_size:,:])
-
-# Reshape both train and test data
-#train_data = train_data.reshape(-1)
-
-# Normalize test data
-#test_data = scaler.transform(test_data).reshape(-1)
-
-# Now perform exponential moving average smoothing
-# So the data will have a smoother curve than the original ragged data
-#EMA = 0.0
-#gamma = 0.1
-#for ti in range(test_min-start_value):
-#  EMA = gamma*train_data[ti] + (1-gamma)*EMA
- # train_data[ti] = EMA
-
-# Used for visualization and test purposes
-all_mid_data = np.concatenate([train_data,test_data],axis=0)
-
+#data visualization
 plt.figure(figsize = (18,9))
-plt.plot(range(0,test_max),(all_mid_data))
-#plt.xticks(range(0,df.shape[0],500),df['Date'].loc[::500],rotation=45) #trying to get it to plot the right dates on the x axis- difficult
+plt.plot(range(start_value,start_value+df.shape[0]),(df['low']+df['high'])/2.0)
+plt.xticks(range(start_value,start_value+df.shape[0],500),df['date'].loc[::500],rotation=45)
 plt.xlabel('Date',fontsize=18)
 plt.ylabel('Mid Price',fontsize=18)
 plt.show()
 
 
-class DataGeneratorSeq(object): #defining the neural net- i didnt change anything here
+train_data = mid_prices[:test_mid]
+test_data = mid_prices[test_mid:]
+
+# Scale the data to be between 0 and 1
+# When scaling remember! You normalize both test and train data with respect to training data
+# Because you are not supposed to have access to test data
+scaler = MinMaxScaler()
+train_data = train_data.reshape(-1,1)
+test_data = test_data.reshape(-1,1)
+    
+#train_data = pd.read_csv('scaled_training_data.csv',delimiter=',').as_matrix()
+#test_data = pd.read_csv('scaled_test_data.csv',delimiter=',').as_matrix()
+
+#train_size = train_data.shape[0]
+#test_size = test_data.shape[0]
+
+#test_min = train_size-100
+#test_mid = train_size
+#test_max = train_size + test_size
+#smoothing_window_size = 100
+#start_value = 0
+#perdiction_size = 25
+
+# Train the Scaler with training data and smooth data
+for di in range(0,test_min-start_value,smoothing_window_size):
+    scaler.fit(train_data[di:di+smoothing_window_size,:])
+    train_data[di:di+smoothing_window_size,:] = scaler.transform(train_data[di:di+smoothing_window_size,:])
+
+#di = test_min-start_value
+# You normalize the last bit of remaining data
+scaler.fit(train_data[di+smoothing_window_size:,:])
+train_data[di+smoothing_window_size:,:] = scaler.transform(train_data[di+smoothing_window_size:,:])
+
+# Reshape both train and test data
+train_data = train_data.reshape(-1)
+
+# Normalize test data
+test_data = scaler.transform(test_data).reshape(-1)
+
+# Now perform exponential moving average smoothing
+# So the data will have a smoother curve than the original ragged data
+EMA = 0.0
+gamma = 0.1
+for ti in range(test_min-start_value):
+  EMA = gamma*train_data[ti] + (1-gamma)*EMA
+  train_data[ti] = EMA
+
+ #Used for visualization and test purposes
+all_mid_data = np.concatenate([train_data,test_data],axis=0)
+
+
+
+class DataGeneratorSeq(object):
 
     def __init__(self,prices,batch_size,num_unroll):
         self._prices = prices
@@ -164,7 +180,7 @@ for ui,(dat,lbl) in enumerate(zip(u_data,u_labels)):
 
 D = 1 # Dimensionality of the data. Since your data is 1-D this would be 1
 num_unrollings = perdiction_size # Number of time steps you look into the future.
-batch_size = 100 # Number of samples in a batch
+batch_size = 500 # Number of samples in a batch
 num_nodes = [200,200,150] # Number of hidden nodes in each layer of the deep LSTM stack we're using
 n_layers = len(num_nodes) # number of layers
 dropout = 0.2 # dropout amount
@@ -274,7 +290,7 @@ with tf.control_dependencies([tf.assign(sample_c[li],sample_state[li][0]) for li
   sample_prediction = tf.nn.xw_plus_b(tf.reshape(sample_outputs,[1,-1]), w, b)
 
 print('\tAll done')
-epochs = 10
+epochs = 20
 valid_summary = 1 # Interval you make test predictions
 
 n_predict_once = perdiction_size # Number of steps you continously predict for
@@ -411,7 +427,7 @@ best_prediction_epoch = np.argmax(mse_test_loss_seq) # replace this with the epo
 
 plt.figure(figsize = (18,18))
 plt.subplot(2,1,1)
-plt.plot(range(test_max-start_value),all_mid_data,color='b')
+plt.plot(range(start_value,start_value+df.shape[0]),all_mid_data,color='b')
 
 # Plotting how the predictions change over time
 # Plot older predictions with low alpha and newer predictions with high alpha
@@ -424,20 +440,21 @@ for p_i,p in enumerate(predictions_over_time[::3]):
 plt.title('Evolution of Test Predictions Over Time',fontsize=18)
 plt.xlabel('Date',fontsize=18)
 plt.ylabel('Mid Price',fontsize=18)
-plt.xlim(test_min-start_value,test_max-start_value)
-#plt.xticks(range(test_mid-start_value,df.shape[0]-start_value,500),df['Date'].loc[::500],rotation=45)
+plt.xlim(start_value,start_value+df.shape[0])
+plt.xticks(range(start_value+test_mid,start_value+df.shape[0],500),df['date'].loc[::500],rotation=45)
+
 
 
 plt.subplot(2,1,2)
 
 # Predicting the best test prediction you got
-plt.plot(range(test_max-start_value),all_mid_data,color='b')
+plt.plot(range(start_value,start_value+df.shape[0]),all_mid_data,color='b')
 for xval,yval in zip(x_axis_seq,predictions_over_time[best_prediction_epoch]):
     plt.plot(xval,yval,color='r')
 
 plt.title('Best Test Predictions Over Time',fontsize=18)
 plt.xlabel('Date',fontsize=18)
 plt.ylabel('Mid Price',fontsize=18)
-plt.xlim(test_min-start_value,test_max-start_value)
-#plt.xticks(range(test_mid-start_value,df.shape[0]-start_value,500),df['Date'].loc[::500],rotation=45)
+plt.xlim(start_value,start_value+df.shape[0])
+plt.xticks(range(start_value+test_mid,start_value+df.shape[0],500),df['date'].loc[::500],rotation=45)
 plt.show()
